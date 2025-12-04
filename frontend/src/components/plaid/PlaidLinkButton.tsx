@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 import { Button, CircularProgress, Alert } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -29,6 +29,7 @@ export default function PlaidLinkButton({ onSuccess }: PlaidLinkButtonProps) {
         setError(err.response?.data?.message || 'Failed to connect account');
       } finally {
         setLoading(false);
+        setLinkToken(null);
       }
     },
     [onSuccess]
@@ -43,8 +44,15 @@ export default function PlaidLinkButton({ onSuccess }: PlaidLinkButtonProps) {
         setError('Failed to connect account');
       }
       setLoading(false);
+      setLinkToken(null);
     },
   });
+
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
 
   const handleClick = async () => {
     try {
@@ -53,12 +61,6 @@ export default function PlaidLinkButton({ onSuccess }: PlaidLinkButtonProps) {
 
       const response = await plaidApi.createLinkToken();
       setLinkToken(response.data?.linkToken || null);
-
-      setTimeout(() => {
-        if (response.data?.linkToken) {
-          open();
-        }
-      }, 100);
     } catch (err: any) {
       console.error('Error creating link token:', err);
       setError(err.response?.data?.message || 'Failed to initialize Plaid');

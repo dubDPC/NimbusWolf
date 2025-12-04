@@ -13,7 +13,9 @@ export class PlaidController {
         });
       }
 
+      console.log('Creating link token for user:', userId);
       const linkToken = await plaidService.createLinkToken(userId);
+      console.log('Link token created successfully');
 
       res.json({
         success: true,
@@ -22,9 +24,10 @@ export class PlaidController {
       });
     } catch (error: any) {
       console.error('Error creating link token:', error);
+      console.error('Error details:', error.response?.data || error.message);
       res.status(500).json({
         success: false,
-        message: error.message || 'Failed to create link token',
+        message: error.response?.data?.error_message || error.message || 'Failed to create link token',
       });
     }
   }

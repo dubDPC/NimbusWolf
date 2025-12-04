@@ -39,8 +39,12 @@ export class PlaidService {
       products: [Products.Transactions],
       country_codes: [CountryCode.Us],
       language: 'en',
-      redirect_uri: process.env.PLAID_REDIRECT_URI,
     };
+
+    // Only include redirect_uri if it's set (needed for OAuth flows)
+    if (process.env.PLAID_REDIRECT_URI) {
+      request.redirect_uri = process.env.PLAID_REDIRECT_URI;
+    }
 
     const response = await this.client.linkTokenCreate(request);
     return response.data.link_token;
