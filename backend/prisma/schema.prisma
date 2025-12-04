@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  firstName     String?   @map("first_name")
+  lastName      String?   @map("last_name")
+  phone         String?
+  isVerified    Boolean   @default(false) @map("is_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastLogin     DateTime? @map("last_login")
+
+  accounts      ConnectedAccount[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  fraudAlerts   FraudAlert[]
+  audits        Audit[]
+  documents     Document[]
+
+  @@map("users")
+}
+
+model ConnectedAccount {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  plaidItemId       String?   @unique @map("plaid_item_id")
+  plaidAccessToken  String?   @map("plaid_access_token") // Encrypted
+  institutionId     String    @map("institution_id")
+  institutionName   String    @map("institution_name")
+  accountType       String    @map("account_type") // checking, savings, credit, investment, loan
+  accountSubtype    String?   @map("account_subtype")
+  accountMask       String?   @map("account_mask") // Last 4 digits
+  accountName       String?   @map("account_name")
+  currentBalance    Decimal?  @map("current_balance") @db.Decimal(15, 2)
+  availableBalance  Decimal?  @map("available_balance") @db.Decimal(15, 2)
+  isActive          Boolean   @default(true) @map("is_active")
+  lastSyncAt        DateTime? @map("last_sync_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+
+  @@map("connected_accounts")
+}
+
+model Transaction {
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  accountId             String    @map("account_id")
+  plaidTransactionId    String?   @unique @map("plaid_transaction_id")
+  amount                Decimal   @db.Decimal(15, 2)
+  date                  DateTime
+  merchantName          String?   @map("merchant_name")
+  categoryPrimary       String?   @map("category_primary")
+  categoryDetailed      String?   @map("category_detailed")
+  isPending             Boolean   @default(false) @map("is_pending")
+  notes                 String?
+  receiptId             String?   @map("receipt_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account ConnectedAccount  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("transactions")
+}
+
+model Budget {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  monthYear       String   @map("month_year") // Format: "2024-01"
+  category        String
+  budgetedAmount  Decimal  @map("budgeted_amount") @db.Decimal(15, 2)
+  spentAmount     Decimal  @default(0) @map("spent_amount") @db.Decimal(15, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, monthYear, category])
+  @@map("budgets")
+}
+
+model FraudAlert {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  transactionId String?   @map("transaction_id")
+  alertType     String    @map("alert_type") // amount_anomaly, location_anomaly, velocity, etc.
+  severity      String    // high, medium, low
+  status        String    @default("open") // open, confirmed, false_positive
+  details       Json?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  resolvedAt    DateTime? @map("resolved_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("fraud_alerts")
+}
+
+model Audit {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  taxYear       Int       @map("tax_year")
+  auditType     String    @map("audit_type") // basic, comprehensive, premium
+  status        String    @default("initiated") // initiated, paid, processing, completed
+  paymentAmount Decimal?  @map("payment_amount") @db.Decimal(10, 2)
+  paymentId     String?   @map("payment_id")
+  submittedAt   DateTime  @default(now()) @map("submitted_at")
+  completedAt   DateTime? @map("completed_at")
+  reportUrl     String?   @map("report_url")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audits")
+}
+
+model Document {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  fileName      String   @map("file_name")
+  fileType      String   @map("file_type")
+  fileSize      Int      @map("file_size")
+  storageUrl    String   @map("storage_url")
+  documentType  String   @map("document_type") // W2, 1099, receipt, statement, etc.
+  extractedText String?  @map("extracted_text") @db.Text
+  uploadedAt    DateTime @default(now()) @map("uploaded_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}

@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for NimbusWolf
+  postgres:
+    image: postgres:16-alpine
+    container_name: nimbuswolf-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"  # Using port 5433 to avoid conflicts with default 5432
+    environment:
+      POSTGRES_USER: nimbuswolf
+      POSTGRES_PASSWORD: nimbuswolf_dev_password
+      POSTGRES_DB: nimbuswolf_dev
+    volumes:
+      - nimbuswolf_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nimbuswolf -d nimbuswolf_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache for NimbusWolf
+  redis:
+    image: redis:7-alpine
+    container_name: nimbuswolf-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"  # Using port 6380 to avoid conflicts with default 6379
+    volumes:
+      - nimbuswolf_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nimbuswolf-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5051:80"  # Access PgAdmin at http://localhost:5051
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nimbuswolf.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - nimbuswolf_pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: nimbuswolf-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"  # Vite dev server
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Prevent overwriting node_modules
+    environment:
+      - VITE_API_URL=http://localhost:5001/api/v1
+      - VITE_APP_NAME=NimbusWolf
+      - VITE_PLAID_ENV=sandbox
+    depends_on:
+      - postgres
+      - redis
+    stdin_open: true
+    tty: true
+
+volumes:
+  nimbuswolf_postgres_data:
+    name: nimbuswolf_postgres_data
+  nimbuswolf_redis_data:
+    name: nimbuswolf_redis_data
+  nimbuswolf_pgadmin_data:
+    name: nimbuswolf_pgadmin_data
