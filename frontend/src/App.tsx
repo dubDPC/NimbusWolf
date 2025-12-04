@@ -6,6 +6,7 @@ import LoginForm from './components/auth/LoginForm';
 import RegisterForm from './components/auth/RegisterForm';
 import Dashboard from './pages/Dashboard';
 import Accounts from './pages/Accounts';
+import Transactions from './pages/Transactions';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 
 // Create MUI theme
@@ -46,6 +47,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Accounts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Transactions />
                 </ProtectedRoute>
               }
             />

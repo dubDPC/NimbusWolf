@@ -68,14 +68,29 @@ export class PlaidService {
 
     const accountsResponse = await this.client.accountsGet(accountsRequest);
     const accounts = accountsResponse.data.accounts;
+    const item = accountsResponse.data.item;
+
+    // Fetch institution details
+    let institutionName = 'Unknown';
+    if (item.institution_id) {
+      try {
+        const institutionResponse = await this.client.institutionsGetById({
+          institution_id: item.institution_id,
+          country_codes: [CountryCode.Us],
+        });
+        institutionName = institutionResponse.data.institution.name;
+      } catch (error) {
+        console.error('Error fetching institution details:', error);
+      }
+    }
 
     const connectedAccount = await prisma.connectedAccount.create({
       data: {
         userId,
         plaidItemId: itemId,
         plaidAccessToken: accessToken,
-        institutionId: accounts[0]?.institution_id || '',
-        institutionName: 'Unknown',
+        institutionId: item.institution_id || '',
+        institutionName,
         accountType: accounts[0]?.type || 'depository',
         accountSubtype: accounts[0]?.subtype,
         accountName: accounts[0]?.name || 'Account',
@@ -178,6 +193,27 @@ export class PlaidService {
     });
 
     return { message: 'Account disconnected successfully' };
+  }
+
+  async getTransactions(userId: string) {
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        account: {
+          select: {
+            accountName: true,
+            institutionName: true,
+          },
+        },
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    });
+
+    return transactions;
   }
 }
 

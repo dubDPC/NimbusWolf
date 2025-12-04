@@ -166,6 +166,33 @@ export class PlaidController {
       });
     }
   }
+
+  async getTransactions(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+        });
+      }
+
+      const transactions = await plaidService.getTransactions(userId);
+
+      res.json({
+        success: true,
+        data: { transactions },
+        message: 'Transactions retrieved successfully',
+      });
+    } catch (error: any) {
+      console.error('Error getting transactions:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to get transactions',
+      });
+    }
+  }
 }
 
 export const plaidController = new PlaidController();

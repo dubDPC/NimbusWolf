@@ -118,7 +118,9 @@ export default function Dashboard() {
                 <Button variant="contained" onClick={() => navigate('/accounts')}>
                   Connect Account
                 </Button>
-                <Button variant="outlined">View Transactions</Button>
+                <Button variant="outlined" onClick={() => navigate('/transactions')}>
+                  View Transactions
+                </Button>
                 <Button variant="outlined">Create Budget</Button>
                 <Button variant="outlined">Start Audit</Button>
               </Box>

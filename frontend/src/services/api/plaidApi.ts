@@ -33,6 +33,29 @@ export interface SyncTransactionsResponse {
   account: ConnectedAccount;
 }
 
+export interface Transaction {
+  id: string;
+  userId: string;
+  accountId: string;
+  plaidTransactionId: string;
+  amount: number;
+  date: Date;
+  merchantName: string | null;
+  categoryPrimary: string | null;
+  categoryDetailed: string | null;
+  isPending: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  account: {
+    accountName: string | null;
+    institutionName: string;
+  };
+}
+
+export interface GetTransactionsResponse {
+  transactions: Transaction[];
+}
+
 const plaidApi = {
   async createLinkToken(): Promise<ApiResponse<CreateLinkTokenResponse>> {
     const response = await apiClient.post<ApiResponse<CreateLinkTokenResponse>>(
@@ -71,6 +94,13 @@ const plaidApi = {
   async deleteAccount(accountId: string): Promise<ApiResponse<void>> {
     const response = await apiClient.delete<ApiResponse<void>>(
       `/plaid/accounts/${accountId}`
+    );
+    return response.data;
+  },
+
+  async getTransactions(): Promise<ApiResponse<GetTransactionsResponse>> {
+    const response = await apiClient.get<ApiResponse<GetTransactionsResponse>>(
+      '/plaid/transactions'
     );
     return response.data;
   },

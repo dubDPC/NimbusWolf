@@ -24,4 +24,8 @@ router.delete('/accounts/:accountId', authenticate, (req, res) =>
   plaidController.deleteAccount(req, res)
 );
 
+router.get('/transactions', authenticate, (req, res) =>
+  plaidController.getTransactions(req, res)
+);
+
 export default router;
