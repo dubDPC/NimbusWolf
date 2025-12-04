@@ -15,7 +15,26 @@ import {
   Chip,
   Card,
 } from '@mui/material';
-import plaidApi, { Transaction } from '../services/api/plaidApi';
+import plaidApi from '../services/api/plaidApi';
+
+interface Transaction {
+  id: string;
+  userId: string;
+  accountId: string;
+  plaidTransactionId: string;
+  amount: number;
+  date: Date;
+  merchantName: string | null;
+  categoryPrimary: string | null;
+  categoryDetailed: string | null;
+  isPending: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  account: {
+    accountName: string | null;
+    institutionName: string;
+  };
+}
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
